@@ -1,0 +1,137 @@
+---
+title: "03_code_non-responder_questionnaire_analysis_Kettlitz et al."
+author: "Robyn Kettlitz"
+date: "2024-11-17"
+output: html_document
+---
+
+R code of the article: 
+Kettlitz et al., Feasibility and diagnostic performance of blood self-sampling with HemaSpot HF: The use case of Anti-Clostridium tetani toxin IgG detection.
+
+This script was used to analyse the non-responder questionnaire. 
+For a description of variables please refer to the codebook.
+
+Abbreviation: 
+
+HS = HemaSpot
+HF = HemaForm
+VBP = venous blood puncture
+
+References: 
+[1]: Sciences SO. HemaSpot™-HF Blood Collection Device  [Available from: https://www.spotonsciences.com/hemaspot-hf/ ]
+
+Use of artificial intelligence:
+We used OpenAI's ChatGPT v2 to review and refine the R code for improved structure and functionality 
+
+Code review by Ruibing Shi [Department for Epidemiology, Helmholtz Centre for Infection Research, Braunschweig, Lower Saxony, Germany]
+-------------------------------------------
+Codebook: 
+
+Question: Indicate why you decided to not participate in the study for blood self-sampling? 
+
+Multiple answers possible: 
+
+Answers: 
+
+F1_1: I have physcial disabilities/ health restrictions that do nor allow me to participate 
+F1_2: Participating is too time-consuming
+F1_3: I generally have inhibitions regarding drawing of blood samples.
+F1_4: I am afraid of blood self-sampling.
+F1_5:I don't see the needs annd benefits of the study. 
+F1_6: I don't find the instrument for blood self-sampling very trustworthy.
+F1_7: I have concerns about data protection
+F1_8: I generally don't participate in surveys or studies
+F1_9: I generally don't like to participate in studies, that are carried out at my workplace.#
+F1_10: Another reason, namely: 
+F1_10a: show answers listed for "other reason"
+---------------------------------------------
+
+##00: Set up, loading relevant packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(pacman)
+
+pacman::p_load(tidyverse, readstata13, janitor, gtsummary,gt, summarytools)
+
+
+```
+
+##01: Read data
+
+```{r}
+nonr <- read.dta13("S:\\PROJACTIVE\\HEMASPOT-1\\5_Daten\\EpiInfo\\Datenabgleich\\Nonresponder\\2_Datenabgleich Sonja und Julia\\FinalVersion_jor_190617.dta") %>% 
+  as_tibble()
+```
+
+##02: Descriptive statistics of the answered questions of the non-repsonder questionnaire
+```{r}
+#count answers
+nonr %>% count(F1_1)#I have physcial disabilities/ health restrictions that do nor allow me to participate 
+nonr %>% count(F1_2)# Participating is too time-consuming
+nonr %>% count(F1_3)# I generally have inhibitions regarding drawing of blood samples.
+nonr %>% count(F1_4)# I am afraid of blood self-sampling.
+nonr %>% count(F1_5)#I don't see the needs annd benefits of the study. 
+nonr %>% count(F1_6)# I don't find the instrument for blood self-sampling very trustworthy.
+nonr %>% count(F1_7)# I have concerns about data protection
+nonr %>% count(F1_8)# I generally don't participate in surveys or studies
+nonr %>% count(F1_9)# I generally don't like to participate in studies, that are carried out at my workplace.
+nonr %>% count(F1_10) #Another reason, namely: 
+nonr %>% count(F1_10a) #show answers listed for "other reason"
+```
+#03: 
+```{r}
+nonr<-nonr %>% mutate(age=case_when(age==0~"<30",
+                        age==1~"30-49",
+                        age==2 ~"≥50"),
+sex=case_when(sex==0~"Female",
+                       sex==1~"Male"),
+edu=case_when(edu==0 ~ "Abitur: no",
+                        edu==1 ~ "Abitur: yes",
+                        edu==2 ~ "Don't know"))
+
+nonr$age[nonr$age == 3] <- NA
+nonr$edu[nonr$edu == 3] <- NA
+nonr$sex[nonr$sex == 2] <- NA
+
+
+nonr%>%
+  select(age, sex, edu, F1_1,F1_2,F1_3,F1_4,F1_5,F1_6,F1_7,F1_8,F1_9,F1_10) %>%
+  tbl_summary(
+    by = age,  # Stratify by age
+    include = c(F1_1,F1_2,F1_3,F1_4,F1_5,F1_6,F1_7,F1_8,F1_9,F1_10),  # Variables to summarize
+    missing = "always",
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+      all_categorical() ~ "{n} ({p}%)"  # Count and percentage for categorical variables
+    ),  percent = "row" ,  # Force 'schm' to be treated as continuous
+  ) %>%
+  add_overall()
+
+nonr%>%
+  select(age, sex, edu, F1_1,F1_2,F1_3,F1_4,F1_5,F1_6,F1_7,F1_8,F1_9,F1_10) %>%
+  tbl_summary(
+    by = sex,  # Stratify by age
+    include = c(F1_1,F1_2,F1_3,F1_4,F1_5,F1_6,F1_7,F1_8,F1_9,F1_10),  # Variables to summarize
+    missing = "always",
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+      all_categorical() ~ "{n} ({p}%)"  # Count and percentage for categorical variables
+    ),percent = "row" , # Force 'schm' to be treated as continuous
+  ) %>%
+  add_overall()
+
+nonr%>%
+  select(age, sex, edu, F1_1,F1_2,F1_3,F1_4,F1_5,F1_6,F1_7,F1_8,F1_9,F1_10) %>%
+  tbl_summary(
+    by = edu,  # Stratify by age
+    include = c(F1_1,F1_2,F1_3,F1_4,F1_5,F1_6,F1_7,F1_8,F1_9,F1_10),  # Variables to summarize
+    missing = "always",
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+      all_categorical() ~ "{n} ({p}%)"  # Count and percentage for categorical variables
+    ),percent = "row" , # Force 'schm' to be treated as continuous
+  ) %>%
+  add_overall()
+```
+

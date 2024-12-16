@@ -1,0 +1,738 @@
+---
+title: "02_code_questionnaire_analysis_Kettlitz et al."
+author: "Robyn Kettlitz"
+date: "2024-11-17"
+output: html_document
+---
+
+R code of the article: 
+Kettlitz et al., Feasibility and diagnostic performance of blood self-sampling with HemaSpot HF: The use case of Anti-Clostridium tetani toxin IgG detection.
+
+This script was used to analyse the feasibility including acceptance of DBS self-sampling with HS. 
+
+For a description of variables please refer to the codebook.
+
+Abbreviation: 
+
+HS = HemaSpot
+HF = HemaForm
+VBP = venous blood puncture
+
+References: 
+[1]: Sciences SO. HemaSpot™-HF Blood Collection Device  [Available from: https://www.spotonsciences.com/hemaspot-hf/ ]
+[2]: NovaTec’s Clostridium tetani toxin 5S IgG plus – ELISA (PTETG043, NovaTec, Germany)
+
+Use of artificial intelligence:
+We used OpenAI's ChatGPT v2 to review and refine the R code for improved structure and functionality 
+
+Code review by Ruibing Shi [Department for Epidemiology, Helmholtz Centre for Infection Research, Braunschweig, Lower Saxony, Germany]
+-----------------------------
+Codebook:
+
+
+Variable name| Content question| Answer options
+
+tet_hs | Result U/ml tetanus HS | continuous
+tet_v | Result U/ml tetanus VBP | continuous
+tet_p | Result U/ml tetanus HF  | continuous
+
+hs1 | Recieved HS device | 0: no, 1: yes
+auf0 | HS without conspicuous features | 0: no, 1: yes
+auf1 | HS with external conspicuous features | 0: no, 1: yes
+auf2 | HS with internal conspicuous features | 0: no, 1: yes
+besch1 | HS external damage | 0: no, 1: yes
+			
+sex| gender| female:0, male:1, other:2, missing: 3
+age |	age |	< 30:0, 30-49:1, > 50: 2, missing:3
+edu	| education - does your highest school-leaving qualification correspond to the Abitur or subject-specific Abitur?| 	no:0, yes:1, I don't know:2, missing:	3
+exp_0 | Have you ever drawn blood before this study? | no:0, yes:1, missing:	2
+exp_1 |	Blood collection from others| | no:0, yes:1 , missing:	2
+exp_2	|	Blood self-sampling | no:0, yes:1, missing:	2
+			
+meth_0| Which method(s) did you use to improve blood circulation prior to self-blood sampling? | no:0, yes:1, missing	3
+meth_1|		Hold hand/fingers under very warm water | no:0, yes:1, missing	3
+meth_2|		Shake hand vigorously | no:0, yes:1, missing	3
+meth_3|		Massage/rub fingers | no:0, yes:1, missing	3
+meth_4|		"Pump" (open and close fist) | no:0, yes:1, missing	3
+meth_5|		Move arm quickly back and forth while hanging down| no:0, yes:1, missing	3
+			
+toL |	How many of the enclosed lancing devices (lancets) did you use?	| Do not click:	0, one:	1, two:	2, missing: 3
+erst |	Were you able to wipe away the first drop of blood?|	no:0, yes:1, don't know:	2,missing:	3
+tropf|	How many drops of blood did you need to wet the filter in the blue click box? |	 I couldn't tell the difference between the drops of blood:	0, 1:1, 2-3:2,, more than 3:3, missing:	4, SPECIAL CASE: more than 3 + drops of blood cannot be distinguished from each other:5
+			
+nach | Has the puncture site bled longer and/or heavily?| no:0, yes:1, missing:	3
+ueb | How much effort did it take you to draw your own blood?| None at all:0, something:1, much:2, Very much:3, missing:4
+sprach |	Which instructions did you mainly use? | Original instructions (leaflet):0, German study guide (booklet):	1,missing:2
+verst |	To what extent were you able to understand these instructions?|	Easy to understand:0, Partly understandable:1, Difficult to understand:2,missing:3
+insg|	On a scale from 0 (very negative) to 10 (very positive), how was your overall experience of self-blood sampling?	0 - very negative:0 to
+		10 - very positive:10 ; missing:	11
+			
+akz | The performance of the blood self-sampling was acceptable. I agree ...|	not at all.:0, rather not:1, rather too.:2, fully and completely.:3, missing:4
+			
+benu |	The blood self-sampling procedure was user-friendly. I agree ...| not at all.:0, rather not:1, rather too.:2, fully and completely.:3, missing:4
+			
+schw| The total blood self-sampling was ... very difficult:	0, difficult:	1, simple:	2, very simple:	3, missing:	4
+			
+stich | The use of the stitching device was ... very difficult:	0, difficult:	1, simple:	2, very simple:	3, missing:	4
+			
+aufbr| Applying the blood to the filter was...	very difficult:	0, difficult:	1, simple:	2, very simple:	3, missing:	4
+			
+schm | on a scale from 0 (no pain at all) to 10 (worst pain imaginable), how much pain did the self-drawing of blood cause?	0 - no pain at all to
+		10 - strongest imaginable pain, missing:11
+			
+zum |	Was this pain reasonable for you in the context of this study?|	Yes	0, partly: 1, no: 2, missing:	3
+			
+praef | Assuming that the laboratory result of self-sampling is the same as that of venous blood sampling by medical staff, which method would you prefer and why?|	Blood self-sampling (on the finger):0, Venous blood sampling by a doctor (on the arm):1, I don't know:2, missing:3, Invalid:4
+			
+selbst | Blood self-sampling (on the finger), because ... |	
+    Invalid - more than 1 ticked:	0,
+		□ less time is required (travel, appointments/waiting time):	1,
+		□ I can determine the time and place myself:	2,
+		□ I don't like going to the doctor: 	3,
+		□ I like to act on my own responsibility:  	4,
+		□ it gives me a sense of security to do things myself:	5,  
+		□ it is simple and uncomplicated:	6,
+		□ I make taking blood samples less painful: 	7,
+		□ the risk of infection is lower:	8,
+		Missing:	9
+			
+			
+med	| Venous blood sampling by medical personnel (on the arm) because ...|
+    Invalid:	0,
+		□ less time is required (blood sampling):	1,
+		□ I don't want to hurt myself: 	2,
+		□ I am afraid of doing something wrong:	3,
+		□ it gives me a feeling of security when it is done by specialist staff:	4,
+		□ it is simple and uncomplicated:	5,
+		□ blood sampling is less painful due to trained personnel: 	6,
+		□ the risk of infection is lower:	7,
+		Missing	8
+			
+empf | Would you recommend participation in a study with blood self-sampling to your friends?|	no:0, yes:1, possibly:2, missing:	3
+			
+-----------------------------
+
+##00: Set up, loading relevant packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(pacman)
+
+pacman::p_load(tidyverse, haven, tableone, broom, lmtest,car, plotly,gridExtra, patchwork,ggpubr,cowplot,gtsummary,gt, summarytools)
+
+```
+
+##01: Read data
+```{r}
+#identify newest file
+recent_file <- list.files(path = "../../../5_Daten/Labordaten/Bearbeitet/", pattern = "MergedAndCleanedData_jor", full.names = TRUE) %>% sort(decreasing = TRUE) %>% 
+  .[1]
+
+hema <- read_csv(recent_file) %>% 
+  select(-1)
+```
+##02: Counts of delivered questionnaires by HS and VBP
+```{r}
+#Counts....
+
+#Overall questionnaires for analysis 
+
+#Instruction questionnaire
+hema %>% filter(anl1==1) %>% 
+  count()
+#Acceptance questionnaire
+hema %>% filter(fb1==1) %>% 
+  count()
+#Feedback questionnaire
+hema %>% filter(!empf==3) %>% filter(!is.na(empf)) %>% 
+  count()
+
+#Stratified by groups (with and without VBP)
+#Only HS without additional VBP
+hema %>% filter (!is.na(hs1==1) &is.na(od2_v)) %>% count()
+
+#Acceptance questionnaire of HS without VBP
+hema %>% filter (!is.na(hs1==1) &is.na(od2_v)& fb1==1) %>% count()
+
+#Instruction questionnaire without additional VBP
+hema %>% filter (!is.na(hs1==1) &is.na(od2_v)& anl1==1) %>% count()
+
+
+#HS and VBP for analysis of questionnaires 
+hema %>% filter(!is.na(od2_v) & hs1==1) %>% 
+  count()
+
+#Instruction questionnaire with VBP
+hema %>% filter(!is.na(od2_v) & anl1==1 & hs1==1) %>% 
+  count()
+
+#Acceptance questionnaire with VBP
+hema %>% filter(!is.na(od2_v) & fb1==1 & hs1==1) %>%
+  count()
+
+```
+
+##03: Further data preparation for summary statistics (Rename the hema_plot)
+```{r}
+#generate variable akzlog for a binary display of accpetance (to stratify data by this variable)
+hema <- hema %>%
+  mutate(akzlog = case_when(akz == 0 ~ 0,
+                            akz == 1 ~ 0,
+                            akz == 2 ~ 1,
+                            akz == 3 ~ 1))
+
+#Frequency table with the accepatnce question
+#the percentages were calculated and added to the Word Table
+#Additional visulaitation:
+
+hema_data1<- hema %>% 
+  mutate(akz=case_when(akz==0~"Not at all",
+                       akz==1~"Rather not",
+                       akz==2~"Rather",
+                       akz==3~"Fully"),
+         benu=case_when(benu==0~"Not at all",
+                       benu==1~"Rather not",
+                       benu==2~"Rather",
+                       benu==3~"Fully"),
+          age=case_when(age==0~"<30",
+                        age==1~"30-49",
+                        age==2 ~"≥50"),
+          edu=case_when(edu==0 ~ "Abitur: no",
+                        edu==1 ~ "Abitur: yes",
+                        edu==2 ~ "Don't know"),
+          exp_0=case_when(exp_0==0~"No experience with blood sampling",
+                          exp_0==1~"Yes experience with blood sampling"),
+         sex=case_when(sex==0~"Female",
+                       sex==1~"Male"),
+         ueb=case_when(ueb==0~ "No effort at all", 
+                      ueb==1~"A bit effort", 
+                      ueb==2~"Much effort", 
+                      ueb==3~"Very much effort"),
+         praef=case_when(praef==0~ "Blood self-sampling", 
+                         praef==1~ "Venous blood puncture by medical staff", 
+                         praef== 2~"Don't know" ),
+         empf=case_when(empf==0~"No",
+                        empf==1~"Yes",
+                        empf==2~ "Maybe recommend"),
+         meth_0==case_when(meth_0==0~"No, method used for blood flow",
+                           meth_0==1~ "Yes, method used for blood flow"),
+         anzL==case_when(anzL==1~"One lancet used",
+                         anzL==2~"Two lancet used"),
+         erst==case_when(erst==0~ "Not removed first drop",
+                         erst==1~ "Yes removed first drop"),
+         tropf=case_when(tropf==0~"Don't know",
+                         tropf==1~"1",
+                         tropf==2~"2-3",
+                         tropf==3|tropf==5~"3+"),
+         verst=case_when(verst==0~"Easy understandable",
+                         verst==1~ "Partially understandable",
+                         verst==2~ "Hard to understand"),
+         zum=case_when(zum==0~"Yes,acceptable",
+                       zum==1~"Yes,partially acceptable",
+                       zum==2~"No,not acceptable"),
+         nach=case_when(nach==0~"No",
+                        nach==1~"Yes"),
+         aufbr=case_when(aufbr==0 ~"Very difficult",
+                         aufbr==1 ~"Difficult",
+                         aufbr==2~"Easy",
+                         aufbr==3 ~"Very easy"),
+         stich=case_when(stich==0 ~"Very difficult",
+                         stich==1 ~"Difficult",
+                         stich==2~"Easy",
+                         stich==3 ~"Very easy"),
+         schw=case_when(schw==0 ~"Very difficult",
+                         schw==1 ~"Difficult",
+                         schw==2~"Easy",
+                         schw==3 ~"Very easy"),
+         selbst=case_when(selbst==1~"less time is needed (travel, appointments/waiting time)",
+                          selbst==2~ "I can determine the time and place myself",
+                          selbst==3~"I don't like going to the doctor",
+                          selbst==4~"I like to take responsibility for my own care ",
+                          selbst==5~"It makes me feel safe to do things myself",
+                          selbst==6~"It is simple and straightforward",
+                          selbst==7~"I make the blood sample less painful",
+                          selbst==8~"The risk of infection is lower"),
+          med=case_when(med==1~"It takes less time (blood sample)",
+                          med==2~ "I do not want to hurt myself",
+                          med==3~"I am afraid of doing something wrong",
+                          med==4~"It gives me a sense of security when it is done by trained personnel",
+                          med==5~"It is simple and uncomplicated",
+                          med==6~"When it is done by trained personnel, the blood sample causes less pain",
+                          med==7~"The risk of infection is lower"))
+
+
+#Adjust the NAs in the data
+hema_data1$age[hema_data1$age == 3] <- NA
+hema_data1$edu[hema_data1$edu == 3] <- NA
+hema_data1$exp_0[hema_data1$exp_0 == 2] <- NA
+hema_data1$sex[hema_data1$sex == 2] <- NA
+hema_data1$akz[hema_data1$akz == 4] <- NA
+hema_data1$ueb[hema_data1$ueb == 4] <- NA
+hema_data1$praef[hema_data1$praef == 4] <- NA
+hema_data1$praef[hema_data1$praef == 3] <- NA
+hema_data1$empf[hema_data1$empf == 3] <- NA
+hema_data1$schm[hema_data1$schm == 11] <- NA
+hema_data1$meth_0[hema_data1$meth_0 == 3] <- NA
+hema_data1$meth_1[hema_data1$meth_1 == 3]<- NA
+hema_data1$meth_2[hema_data1$meth_2 == 3]<- NA
+hema_data1$meth_3[hema_data1$meth_3 == 3]<- NA
+hema_data1$meth_4[hema_data1$meth_4 == 3]<- NA
+hema_data1$meth_5[hema_data1$meth_5 == 3]<- NA
+hema_data1$anzL[hema_data1$anzL == 3]<- NA
+hema_data1$erst[hema_data1$erst == 3]<- NA
+hema_data1$tropf[hema_data1$tropf == 4]<- NA
+hema_data1$verst[hema_data1$verst == 3]<- NA
+hema_data1$zum[hema_data1$zum == 3]<- NA
+hema_data1$nach[hema_data1$nach == 3]<- NA
+hema_data1$aufbr[hema_data1$aufbr == 4]<- NA
+hema_data1$selbst[hema_data1$selbst == 9]<- NA
+hema_data1$selbst[hema_data1$selbst == 0]<- NA
+hema_data1$med[hema_data1$med == 9]<- NA
+hema_data1$med[hema_data1$med == 0]<- NA
+hema_data1$schw[hema_data1$schw == 4]<- NA
+ 
+
+#Save as numeric variables
+hema_data1 <- hema_data1%>%
+  mutate(insg = as.numeric(insg))
+
+hema_data1 <- hema_data1%>%
+  mutate(schm = as.numeric(as.character(schm)))
+```
+##03: Create a summary tables with overall column and stratification for supplement
+```{r}
+#Overall sample arrived HemaSpot
+
+hema_data1 %>%
+  select(age, sex, edu, exp_0) %>%
+  tbl_summary( # Variables to summarize
+    missing = "always",
+    statistic = list(
+    all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+    all_categorical() ~ "{n} ({p}%)" ), 
+    # Count and percentage for categorical variables
+    # Show all missing values
+  ) 
+
+#Only those with additional VBP
+
+hema_data1 %>%
+  filter(!is.na(tet_hs), !is.na(tet_v)) %>% 
+  select(age, sex, edu, exp_0) %>%
+  tbl_summary( # Variables to summarize
+    missing = "always",
+    statistic = list(
+    all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+    all_categorical() ~ "{n} ({p}%)" ) # Count and percentage for categorical variables
+    # Show all missing values
+  ) 
+```
+
+##03a: Cacluation of percentange and signfificance tests (group comparison) for Figure 2: Study participants’ characteristics (shown in percentage) of self-blood. For the question: Would you recommend participation in a study for blood self-sampling to your friends? Stratified by experience with blood-sampling, age, sex, and education 
+```{r}
+hema_data1 %>% 
+  select(empf) %>% 
+  group_by(empf) %>% # Group by exp_0
+  summarise(count = sum(!is.na(empf))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+hema_data1 %>% 
+  select(exp_0, empf) %>% 
+  group_by(exp_0, empf) %>% # Group by exp_0
+  summarise(count = sum(!is.na(empf))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(edu, empf) %>% # Group by Alter
+  summarise(count = sum(!is.na(empf))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(sex, empf) %>% # Group by Alter
+  summarise(count = sum(!is.na(empf))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(age, empf) %>% # Group by Alter
+  summarise(count = sum(!is.na(empf))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+
+
+hema_data1 %>%
+  # Remove rows with missing values in empf and age, sex, edu, exp_0
+  filter(!is.na(empf) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  
+  # Perform Chi-square tests
+  summarise(
+    chi_sq_empf_age = chisq.test(table(empf, age))$p.value,
+    chi_sq_empf_sex = chisq.test(table(empf, sex))$p.value,
+    chi_sq_empf_edu = chisq.test(table(empf, edu))$p.value,
+    chi_sq_empf_exp_0 = chisq.test(table(empf, exp_0))$p.value
+  )
+
+#Use Fisher's Exact Test: 
+hema_data1 %>%
+  filter(!is.na(empf) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  summarise(
+    fisher_empf_age = fisher.test(table(empf, age))$p.value,
+    fisher_empf_sex = fisher.test(table(empf, sex))$p.value,
+    fisher_empf_edu = fisher.test(table(empf, edu))$p.value,
+    fisher_empf_exp_0 = fisher.test(table(empf, exp_0))$p.value
+  )
+
+```
+
+##03b: Cacluation of percentange and significance tests (group comparison)  for Figure 2: Study participants’ characteristics (shown in percentage) of self-blood. For the question:To what extent do you agree with the following statements? The procedure of blood self-sampling was acceptable. Stratified by experience with blood-sampling, age, sex, and education 
+```{r}
+hema_data1 %>% 
+  select(akz) %>% 
+  group_by(akz) %>%  # Group by exp_0
+  summarise(count = sum(!is.na(akz))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+hema_data1 %>% 
+  select(exp_0, akz) %>% 
+  group_by(exp_0, akz) %>% # Group by exp_0
+  summarise(count = sum(!is.na(akz))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(edu, akz) %>% # Group by Alter
+  summarise(count = sum(!is.na(akz))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(sex, akz) %>% # Group by Alter
+  summarise(count = sum(!is.na(akz))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(age, akz) %>% # Group by Alter
+  summarise(count = sum(!is.na(akz))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>%
+  # Remove rows with missing values in akz and age, sex, edu, exp_0
+  filter(!is.na(akz) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  
+#Perform Chi-square tests
+  summarise(
+    chi_sq_akz_age = chisq.test(table(akz, age))$p.value,
+    chi_sq_akz_sex = chisq.test(table(akz, sex))$p.value,
+    chi_sq_akz_edu = chisq.test(table(akz, edu))$p.value,
+    chi_sq_akz_exp_0 = chisq.test(table(akz, exp_0))$p.value
+  )
+
+#Use Fisher's Exact Test: 
+hema_data1 %>%
+  filter(!is.na(akz) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  summarise(
+    fisher_akz_age = fisher.test(table(akz, age))$p.value,
+    fisher_akz_sex = fisher.test(table(akz, sex))$p.value,
+    fisher_akz_edu = fisher.test(table(akz, edu))$p.value,
+    fisher_akz_exp_0 = fisher.test(table(akz, exp_0))$p.value
+  )
+
+```
+##03c:Cacluation of percentange and significance tests (group comparison) for Figure 2: Study participants’ characteristics (shown in percentage) of self-blood. For the question: How much effort did it imply for you, to draw blood self-sampling? Stratified by experience with blood-sampling, age, sex, and education 
+```{r}
+hema_data1 %>% 
+  select(ueb) %>% 
+  group_by(ueb) %>%  # Group by exp_0
+  summarise(count = sum(!is.na(ueb))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+hema_data1 %>% 
+  select(exp_0, ueb) %>% 
+  group_by(exp_0, ueb) %>% # Group by exp_0
+  summarise(count = sum(!is.na(ueb))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(edu, ueb) %>% # Group by Alter
+  summarise(count = sum(!is.na(ueb))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(sex, ueb) %>% # Group by Alter
+  summarise(count = sum(!is.na(ueb))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(age, ueb) %>% # Group by Alter
+  summarise(count = sum(!is.na(ueb))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+
+hema_data1 %>%
+  # Remove rows with missing values in ueb and age, sex, edu, exp_0
+  filter(!is.na(ueb) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  
+  # Perform Chi-square tests
+  summarise(
+    chi_sq_ueb_age = chisq.test(table(ueb, age))$p.value,
+    chi_sq_ueb_sex = chisq.test(table(ueb, sex))$p.value,
+    chi_sq_ueb_edu = chisq.test(table(ueb, edu))$p.value,
+    chi_sq_ueb_exp_0 = chisq.test(table(ueb, exp_0))$p.value
+  )
+
+#Use Fisher's Exact Test: 
+hema_data1 %>%
+  filter(!is.na(ueb) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  summarise(
+    fisher_ueb_age = fisher.test(table(ueb, age))$p.value,
+    fisher_ueb_sex = fisher.test(table(ueb, sex))$p.value,
+    fisher_ueb_edu = fisher.test(table(ueb, edu))$p.value,
+    fisher_ueb_exp_0 = fisher.test(table(ueb, exp_0))$p.value
+  )
+
+```
+
+##03d: Cacluation of percentange and significance tests (group comparison) for Figure 2: Study participants’ characteristics (shown in percentage) of self-blood. For the question: How much effort did it imply for you, to draw blood self-sampling? Stratified by experience with blood-sampling, age, sex, and education 
+```{r}
+hema_data1 %>% 
+  select(praef) %>% 
+  group_by(praef) %>% # Group by exp_0
+  summarise(count = sum(!is.na(praef))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+hema_data1 %>% 
+  select(exp_0, praef) %>% 
+  group_by(exp_0, praef) %>% # Group by exp_0
+  summarise(count = sum(!is.na(praef))) %>%# Count the non-missing entries per exp_0-Gruppe
+  mutate(percentage = round(count / sum(count) * 100, 0))  # Percentage per exp_0rounded to 0 decimal places
+
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(edu, praef) %>% # Group by Alter
+  summarise(count = sum(!is.na(praef))) %>%# Count the non-missing entries per  group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(sex, praef) %>% # Group by Alter
+  summarise(count = sum(!is.na(praef))) %>%# Count the non-missing entries per group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+hema_data1 %>% 
+  select(age, sex, edu, exp_0, praef, empf, ueb, akz) %>% 
+  group_by(age, praef) %>% # Group by Alter
+  summarise(count = sum(!is.na(praef))) %>%# Count the non-missing entries per group
+  mutate(percentage = round(count / sum(count) * 100, 0)) 
+
+
+
+hema_data1 %>%
+  # Remove rows with missing values in praef and age, sex, edu, exp_0
+  filter(!is.na(praef) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  
+  # Perform Chi-square tests
+  summarise(
+    chi_sq_praef_age = chisq.test(table(praef, age))$p.value,
+    chi_sq_praef_sex = chisq.test(table(praef, sex))$p.value,
+    chi_sq_praef_edu = chisq.test(table(praef, edu))$p.value,
+    chi_sq_praef_exp_0 = chisq.test(table(praef, exp_0))$p.value
+  )
+
+#Use Fisher's Exact Test: 
+hema_data1 %>%
+  filter(!is.na(praef) & !is.na(age) & !is.na(sex) & !is.na(edu) & !is.na(exp_0)) %>%
+  summarise(
+    fisher_praef_age = fisher.test(table(praef, age))$p.value,
+    fisher_praef_sex = fisher.test(table(praef, sex))$p.value,
+    fisher_praef_edu = fisher.test(table(praef, edu))$p.value,
+    fisher_praef_exp_0 = fisher.test(table(praef, exp_0))$p.value
+  )
+```
+##04: Create a summary tables with overall column and stratification for supplement by row
+```{r}
+
+hema_data1 %>%
+  select(age, sex, edu, exp_0, akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach, stich,anzL, schw) %>%
+  tbl_summary(
+    by = age,  # Stratify by age
+    include = c(akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach, stich,anzL, schw),  # Variables to summarize
+    missing = "always",
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+      all_categorical() ~ "{n} ({p}%)"  # Count and percentage for categorical variables
+    ), percent="row",
+    type = list(schm ~ "continuous"), # Force 'schm' to be treated as continuous
+  ) %>%
+  add_overall()
+
+hema_data1 %>%
+  select(age, sex, edu, exp_0, akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach, stich,anzL, schw) %>%
+  tbl_summary(
+    by = sex,  # Stratify by age
+    include = c(akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach,stich,anzL, schw),  # Variables to summarize
+    missing = "always",
+   statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+      all_categorical() ~ "{n} ({p}%)"  # Count and percentage for categorical variables
+    ),
+    type = list(schm ~ "continuous"), percent = "row",  # Force 'schm' to be treated as continuous
+  ) %>%
+  add_overall()
+
+hema_data1 %>%
+  select(age, sex, edu, exp_0, akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach, stich,anzL, schw) %>%
+  tbl_summary(
+    by = edu,  # Stratify by age
+    include = c(akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach, stich,anzL, schw),  # Variables to summarize
+    missing = "always",
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+      all_categorical() ~ "{n} ({p}%)"  # Count and percentage for categorical variables
+    ),
+    type = list(schm ~ "continuous"), percent = "row",  # Force 'schm' to be treated as continuous
+  ) %>%
+  add_overall()
+
+
+hema_data1 %>%
+  select(age, sex, edu, exp_0, akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach, stich,anzL, schw) %>%
+  tbl_summary(
+    by = exp_0,  # Stratify by age
+    include = c(akz,benu,insg, ueb,aufbr,praef, selbst, med, empf,zum, schm ,meth_0, meth_1, meth_2, meth_3, meth_4, meth_5, erst, tropf, verst, nach, stich,anzL, schw),  # Variables to summarize
+    missing = "always",
+   statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",  # Median with IQR for numeric variables
+      all_categorical() ~ "{n} ({p}%)"  # Count and percentage for categorical variables
+    ),
+    type = list(schm ~ "continuous"), percent = "row",  # Force 'schm' to be treated as continuous
+  ) %>%
+  add_overall()
+
+
+```
+##05: Net Promoter Score calulations ad stratified by experience with blood-sampling, age, sex, and education 
+```{r}
+df <- hema %>%
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps <- df[2,2]/(df[2,2]+df[1,2]) - df[1,2]/(df[2,2]+df[1,2]) 
+#calculate Net Promoter Score with resulting table df (df[2,2] represents the count of those who agree| df[1,2] represents the count of those who disagree) ->#(106/(106+3)) - (3/(106+3))
+
+nps
+
+
+#Net Promoter Score calulations by male
+table(hema$sex)
+
+df_sex_f <- hema %>% 
+  filter (sex==0) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_sex_f <- df_sex_f[2,2]/(df_sex_f[2,2]+df_sex_f[1,2]) - df_sex_f[1,2]/(df_sex_f[2,2]+df_sex_f[1,2])#Female 97% 
+#calculate Net Promoter Score with resulting table df (df[2,2] represents the count of those who agree| df[1,2] represents the count of those who disagree) ->#(106/(106+3)) - (3/(106+3))
+
+df_sex_m <- hema %>% 
+  filter (sex==1) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_sex_m <- df_sex_m[2,2]/(df_sex_m[2,2]+df_sex_m[1,2]) - df_sex_m[1,2]/(df_sex_m[2,2]+df_sex_m[1,2])#Male: 91%
+
+
+#Net Promoter Score calulations by <30
+
+df_age_0 <- hema %>% 
+  filter (age==0) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_age_0<- df_age_0[2,2]/(df_age_0[2,2]+df_age_0[1,2]) - df_age_0[1,2]/(df_age_0[2,2]+df_age_0[1,2])#82%
+
+
+#Net Promoter Score calulations by 30-49
+
+df_age_1 <- hema %>% 
+  filter (age==1) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_age_1<- df_age_1[2,2]/(df_age_1[2,2]+df_age_1[1,2]) - df_age_1[1,2]/(df_age_1[2,2]+df_age_1[1,2])
+
+
+#Net Promoter Score calulations by >50
+
+df_age_2 <- hema %>% 
+  filter (age==2) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_age_2<- df_age_2[2,2]/(df_age_2[2,2]+df_age_2[1,2]) - df_age_2[1,2]/(df_age_2[2,2]+df_age_2[1,2])
+
+#Net Promoter Score calulations by education
+
+table(hema$edu)
+
+df_edu_0 <- hema %>% 
+  filter (edu==0) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_edu_0<- df_edu_0[2,2]/(df_edu_0[2,2]+df_edu_0[1,2]) - df_edu_0[1,2]/(df_edu_0[2,2]+df_edu_0[1,2])
+
+
+df_edu_1 <- hema %>% 
+  filter (edu==1) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_edu_1<- df_edu_1[2,2]/(df_edu_1[2,2]+df_edu_1[1,2]) - df_edu_1[1,2]/(df_edu_1[2,2]+df_edu_1[1,2])#93%
+
+df_edu_2 <- hema %>% 
+  filter (edu==2) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_edu_2<- df_edu_2[2,2]/(df_edu_2[2,2]+df_edu_2[1,2]) - df_edu_2[1,2]/(df_edu_2[2,2]+df_edu_2[1,2])#93%
+
+#Net Promoter Score calulations by experience with blood sampling
+table(hema$exp_0)
+
+df_exp_0 <- hema %>% 
+  filter (exp_0==0) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_exp_0 <- df_exp_0[2,2]/(df_exp_0[2,2]+df_exp_0[1,2]) - df_exp_0[1,2]/(df_exp_0[2,2]+df_exp_0[1,2])#97%
+
+df_exp_1 <- hema %>% 
+  filter (exp_0==1) %>% 
+  select(empf) %>%
+  filter(empf <= 1) %>% #only include the ones agreeing or disagreeing (so 0 and 1)
+  count(empf)
+  
+nps_exp_1 <- df_exp_1[2,2]/(df_exp_1[2,2]+df_exp_1[1,2]) - df_exp_1[1,2]/(df_exp_1[2,2]+df_exp_1[1,2])#92%
+
+
+```

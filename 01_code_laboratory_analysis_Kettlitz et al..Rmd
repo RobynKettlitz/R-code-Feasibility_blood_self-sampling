@@ -1,0 +1,319 @@
+---
+title: "01_code_laboratory_analysis_Kettlitz et al."
+author: "Robyn Kettlitz"
+date: "2024-11-17"
+output: html_document
+---
+R code of the article: 
+Kettlitz et al., Feasibility and diagnostic performance of blood self-sampling with HemaSpot HF: The use case of Anti-Clostridium tetani toxin IgG detection.
+
+This script was used to analyse the the diagnostic performance of HemaSpot HF device (HS) [1] in the detection of Anti-Clostridium tetani toxin IgG as a use case for comparison with  venous blood puncture (VBP) as the gold standard for blood collection. 
+
+For a description of variables please refer to the codebook.
+
+Abbreviation: 
+
+HS = HemaSpot
+HF = HemaForm
+VBP = venous blood puncture
+
+References: 
+
+[1]: Sciences SO. HemaSpot™-HF Blood Collection Device  [Available from: https://www.spotonsciences.com/hemaspot-hf/ ]
+[2]: NovaTec’s Clostridium tetani toxin 5S IgG plus – ELISA (PTETG043, NovaTec, Germany)
+
+Use of artificial intelligence:
+We used OpenAI's ChatGPT v2 to review and refine the R code for improved structure and functionality 
+
+
+Code review by Ruibing Shi [Department for Epidemiology, Helmholtz Centre for Infection Research, Braunschweig, Lower Saxony, Germany]
+-----------------------------
+Codebook:
+
+Variable name| Content question| Answer options
+
+tet_hs | Result U/ml tetanus HS | continuous
+tet_v | Result U/ml tetanus VBP | continuous
+tet_p | Result U/ml tetanus HF  | continuous
+
+hs1 | Recieved HS device | 0: no, 1: yes
+auf0 | HS without conspicuous features | 0: no, 1: yes
+auf1 | HS with external conspicuous features | 0: no, 1: yes
+auf2 | HS with internal conspicuous features | 0: no, 1: yes
+besch1 | HS external damage | 0: no, 1: yes
+
+-----------------------------
+
+##00: Set up, loading relevant packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(pacman)
+
+pacman::p_load(tidyverse, gfonts ,haven, epiR,irr, BlandAltmanLeh,psych, Kendall, DescTools)
+```
+
+##01: Read data
+```{r}
+#identify newest file
+recent_file <- list.files(path = "../../../5_Daten/Labordaten/Bearbeitet/", pattern = "MergedAndCleanedData_jor", full.names = TRUE)  %>% sort(decreasing = TRUE) %>% 
+  .[1]
+
+hema <- read_csv(recent_file) %>% 
+  select(-1)
+```
+
+##02: Frequency of HS, HF, and VBP plus internal and external conspicuities 
+```{r}
+
+#Amount of HS and VBP samples
+hema %>% filter(!is.na(tet_hs)) %>% count()
+hema %>% filter(!is.na(tet_hs), is.na(tet_v)) %>% count()#HS without VBP
+hema %>% filter(!is.na(tet_hs), !is.na(tet_p)) %>% count()#HS and HF
+hema %>% filter(!is.na(tet_hs), !is.na(tet_v)) %>% count()#HS plus VBP
+
+
+#Percentage: Received HS 
+hema %>% 
+  group_by(hs1) %>% 
+  summarise(count = n()) %>%
+  drop_na() %>% 
+  mutate(percentage = round(count / sum(count)*100,digits=1))
+
+#Percentage of HS with conspicuities
+hema %>% 
+  group_by(auf0) %>% 
+  summarise(count = n()) %>%
+  drop_na() %>% 
+  mutate(percentage = round(count / sum(count)*100,digits=1))
+
+#Percentage of HS with conspicuous external
+hema %>% filter(auf0==0) %>% 
+  group_by(auf1) %>% 
+  summarise(count = n()) %>%
+  mutate(percentage = round(count / sum(count)*100,digits=1))
+
+
+#Percentage of HS with conspicuous internal
+hema %>% filter(auf0==0) %>% 
+  group_by(auf2) %>% 
+  summarise(count = n()) %>% 
+  mutate(percentage = round(count / sum(count)*100,digits=1))
+  
+```
+##03:Preparation of the analysed labortaory values for detection in Anti-Clostridium tetani toxin IgG 
+according to the manufacture manual of the ELISA (PTETG043, NovaTec, Germany) [2]
+```{r}
+#Store the laboratory values of the antibody concentration in the samples HS, HF, and VBP as numeric variables for analysis
+hema$tet_hs<-as.numeric(hema$tet_hs)
+hema$tet_v<-as.numeric(hema$tet_v)
+hema$tet_p<-as.numeric(hema$tet_p)
+
+#create binary variables for HemaSpot results
+hsTet <- hema %>% select(ID,tet_hs) %>%
+  mutate(tet_hs_erg1 = ifelse(tet_hs < 0.01, 0, 1)) %>%
+  mutate(tet_hs_erg2 = ifelse(tet_hs <= 0.1, 0, 1)) %>%
+  mutate(tet_hs_erg3 = ifelse(tet_hs <= 0.5, 0, 1)) %>%
+  mutate(tet_hs_erg4 = ifelse(tet_hs <= 1.0, 0, 1)) %>%
+  mutate(tet_hs_erg5 = ifelse(tet_hs <= 5.0, 0, 1))
+
+#create binary variables for Serum results
+vTet <- hema %>% select(ID, tet_v) %>%
+  mutate(tet_v_erg1 = ifelse(tet_v < 0.01, 0, 1)) %>%
+  mutate(tet_v_erg2 = ifelse(tet_v <= 0.1, 0, 1)) %>%
+  mutate(tet_v_erg3 = ifelse(tet_v <= 0.5, 0, 1)) %>%
+  mutate(tet_v_erg4 = ifelse(tet_v <= 1.0, 0, 1)) %>%
+  mutate(tet_v_erg5 = ifelse(tet_v <= 5.0, 0, 1))
+
+#create binary variables for HemaForm results
+
+pTet <- hema %>% select(ID, tet_p) %>%
+  mutate(tet_p_erg1 = ifelse(tet_p < 0.01, 0, 1)) %>%
+  mutate(tet_p_erg2 = ifelse(tet_p <= 0.1, 0, 1)) %>%
+  mutate(tet_p_erg3 = ifelse(tet_p <= 0.5, 0, 1)) %>%
+  mutate(tet_p_erg4 = ifelse(tet_p <= 1.0, 0, 1)) %>%
+  mutate(tet_p_erg5 = ifelse(tet_p <= 5.0, 0, 1)) %>%
+  select(-tet_p)
+
+#Merge two data sets
+
+#HS and VBP
+hs_vTet <- merge(hsTet, vTet, by = "ID", all = TRUE) 
+hs_vTet <-na.omit(hs_vTet)
+
+
+#HF and VBP
+p_vTet <- merge(pTet, vTet, by = "ID", all = TRUE) 
+p_vTet <- na.omit(p_vTet)
+ 
+
+#Merge HF, VBP, and HS
+all_Tet <- merge(pTet,vTet, by ="ID", all=TRUE)
+all_Tet <- merge(all_Tet,hsTet,by ="ID", all=TRUE)
+all_Tet<- na.omit(all_Tet)
+
+#One data set with only the numeric measures of Anti-Clostridium tetani toxin antibodies
+tet_od<-hema %>% select(ID,tet_hs,tet_v,tet_p) %>% 
+  na.omit()
+
+tet_od$tet_hs<-as.numeric(tet_od$tet_hs)
+tet_od$tet_p<-as.numeric(tet_od$tet_p)
+tet_od$tet_v<-as.numeric(tet_od$tet_v)
+
+```
+##04: Calculating sensitivites and 95%-CI within the different cut-off values for detection Anti-Clostridium tetani toxin IgG 
+according to the manufacture manual of the used ELISA (PTETG043, NovaTec, Germany) [2]
+```{r}
+#Calculating sensitivity cut off < 0.01
+#HS vs VBP
+table(all_Tet$tet_hs_erg1,all_Tet$tet_v_erg1)
+as.table(matrix(c(49, 0, 0, 0), nrow = 2, byrow = TRUE)) %>% epi.tests()
+
+#HF vs VBP
+table(all_Tet$tet_p_erg1,all_Tet$tet_v_erg1)
+as.table(matrix(c(49, 0, 0, 0), nrow = 2, byrow = TRUE)) %>% epi.tests()
+
+#Calculating sensitivity cut off <= 0.1
+#HS vs VBP
+table(all_Tet$tet_hs_erg2,all_Tet$tet_v_erg2)
+as.table(matrix(c(49, 0, 0, 0), nrow = 2, byrow = TRUE)) %>% epi.tests()
+#HF vs VBP
+table(all_Tet$tet_p_erg2,all_Tet$tet_v_erg2)
+as.table(matrix(c(49, 0, 0, 0), nrow = 2, byrow = TRUE)) %>% epi.tests()
+
+#Calculating sensitivity cut off <= 0.5
+#HS vs VBP
+table(all_Tet$tet_hs_erg3,all_Tet$tet_v_erg3)
+as.table(matrix(c(46, 0, 3, 0), nrow = 2, byrow = TRUE)) %>% epi.tests()
+
+#HF vs VBP
+table(all_Tet$tet_p_erg3,all_Tet$tet_v_erg3)
+as.table(matrix(c(49, 0, 0, 0), nrow = 2, byrow = TRUE)) %>% epi.tests()
+
+#Calculating sensitivity cut off <= 1.0
+#HS vs VBP
+table(all_Tet$tet_hs_erg4,all_Tet$tet_v_erg4)
+as.table(matrix(c(33, 0, 14, 2), nrow = 2, byrow = TRUE)) %>% epi.tests()
+#HF vs VBP
+table(all_Tet$tet_p_erg4,all_Tet$tet_v_erg4)
+as.table(matrix(c(40, 0, 7, 2), nrow = 2, byrow = TRUE)) %>% epi.tests()
+
+#Calculating sensitivity cut off <= 5.0 
+#HS vs VBP
+table(all_Tet$tet_hs_erg5,all_Tet$tet_v_erg5)
+as.table(matrix(c(0, 0, 0, 49), nrow = 2, byrow = TRUE)) %>% epi.tests()
+#HF vs VBP
+table(all_Tet$tet_p_erg5,all_Tet$tet_v_erg5)
+as.table(matrix(c(0, 0, 0, 49), nrow = 2, byrow = TRUE)) %>% epi.tests()
+
+```
+##05: Correlation of Anti-Clostridium tetani toxin IgG concentration in the different samples. Calculation of Pearson correlation.
+```{r}
+#Testing normal distribution
+hist(tet_od$tet_hs)
+hist(tet_od$tet_p)
+hist(tet_od$tet_v)
+
+#Testing linearity
+ggplot(tet_od, aes(x = tet_hs, y = tet_v)) +
+  geom_point(shape = 21, size = 3, fill = rgb(0, 90/255, 160/255), color = "black") + 
+  geom_smooth(method = "lm", color = rgb(0, 90/255, 160/255)) + 
+  labs(title = "Scatter plot tetanus antibody concentration", subtitle = "r=0.73 (95% CI:0.56-0.83)",
+       x = "HemaSpot", y = "venous blood puncture")+ 
+  theme(panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank()) 
+
+ggplot(tet_od, aes(x = tet_p, y = tet_v)) +
+  geom_point(shape = 21, size = 3, fill = rgb(210/255, 50/255, 100/255), color = "black") +
+  geom_smooth(method = "lm", color = rgb(210/255, 50/255, 100/255)) + 
+  labs(title = "Scatter plot tetanus antibody concentration", subtitle = "r=0.81 (95% CI:0.69-0.89)",
+       x = "HemaForm", y = "venous blood puncture")+ 
+  theme(panel.grid.major = element_blank(),  # Remove major grid lines
+        panel.grid.minor = element_blank()) 
+
+#Calculation of Pearson correlation
+
+correlation_1<-cor.test(tet_od$tet_hs, tet_od$tet_v, method = "pearson")
+correlation_2<-cor.test(tet_od$tet_p, tet_od$tet_v, method = "pearson")
+
+```
+
+##06:Calculation and creation of Bland-Altman plots
+```{r}
+#Prepare data for Bland-Altman plots
+
+#Plot for comparing HS and VBP
+ba1tet <- hema %>% select(tet_v, tet_hs) %>% 
+  mutate(tet_v = as.character(tet_v),
+        tet_v = as.numeric(tet_v)) %>% 
+  mutate(tet_hs = as.character(tet_hs),
+         tet_hs = as.numeric(tet_hs)) %>% 
+  na.omit()
+
+#Plot for comparing HF and VBP
+ba2tet <- hema %>% select(tet_v, tet_p) %>% 
+  mutate(tet_v = as.character(tet_v),
+         tet_v = as.numeric(tet_v)) %>% 
+  mutate(tet_p = as.character(tet_p),
+         tet_p = as.numeric(tet_p)) %>% 
+  na.omit()
+
+#Plot for comparing HF and HS
+ba3tet <- hema %>% select(tet_p, tet_hs) %>% 
+  mutate(tet_hs = as.character(tet_hs),
+         tet_hs = as.numeric(tet_hs)) %>% 
+  mutate(tet_p = as.character(tet_p),
+         tet_p = as.numeric(tet_p)) %>% 
+  na.omit()
+
+#Plot for comparing HS and VBP
+ba1tet_plot <- BlandAltmanLeh::bland.altman.plot(ba1tet$tet_v, ba1tet$tet_hs, graph.sys = "ggplot2") +
+  geom_point(color = rgb(0, 90/255, 160/255), size = 3) +
+  labs(title = "",
+       x = "Average measure of Anti-Clostridium tetani toxin IgG concentration",
+       y = "Difference in Anti-Clostridium tetani toxin IgG concentration between sampling methods: 
+       HemaSpot-HF - HemaForm") +
+  theme_classic()+
+  scale_y_continuous(breaks = seq(-0.5, 2.5, 0.5), limits=c(-0.5, 2.5)) +
+  scale_x_continuous(breaks = seq(0, 3.0, 0.5), limits=c(0, 3.0)) +
+  theme(axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 5),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 6),
+        panel.border = element_rect(color = "black", fill = NA, size = 1))
+  
+#Plot for comparing HF and VBP
+ba2tet_plot <- BlandAltmanLeh::bland.altman.plot(ba2tet$tet_v, ba2tet$tet_p, graph.sys = "ggplot2") + 
+  geom_point(color = rgb(210/255, 50/255, 100/255), size = 3) +
+  labs(title = "",
+       x = "Average measure of Anti-Clostridium tetani toxin IgG concentration",
+       y = "Difference in Anti-Clostridium tetani toxin IgG concentration between sampling methods: 
+       HemaSpot-HF - HemaForm") +
+  theme_classic()+
+  scale_y_continuous(breaks = seq(-0.5, 2.5, 0.5), limits=c(-0.5, 2.5)) +
+  scale_x_continuous(breaks = seq(0, 3.0, 0.5), limits=c(0, 3.0)) +
+  theme(axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 5),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 6),
+        panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+#Plot for comparing HF and HS
+ba3tet_plot <- BlandAltmanLeh::bland.altman.plot(ba3tet$tet_p, ba3tet$tet_hs, graph.sys = "ggplot2") + 
+  geom_point(color = "forestgreen", size = 3) +
+  labs(title = "",
+       x = "Average measure of Anti-Clostridium tetani toxin IgG concentration",
+       y = "Difference in Anti-Clostridium tetani toxin IgG concentration between sampling methods: 
+       HemaSpot-HF - HemaForm") +
+  theme_classic()+
+  scale_y_continuous(breaks = seq(-0.5, 2.5, 0.5), limits=c(-0.5, 1.0)) +
+  scale_x_continuous(breaks = seq(0, 3.0, 0.5), limits=c(0, 3.0)) +
+  theme(axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 5),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 6),
+        panel.border = element_rect(color = "black", fill = NA, size = 1))
+
+
+```
