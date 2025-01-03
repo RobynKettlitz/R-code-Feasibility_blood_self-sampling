@@ -115,16 +115,14 @@ hsTet <- hema %>% select(ID,tet_hs) %>%
   mutate(tet_hs_erg1 = ifelse(tet_hs < 0.01, 0, 1)) %>%
   mutate(tet_hs_erg2 = ifelse(tet_hs <= 0.1, 0, 1)) %>%
   mutate(tet_hs_erg3 = ifelse(tet_hs <= 0.5, 0, 1)) %>%
-  mutate(tet_hs_erg4 = ifelse(tet_hs <= 1.0, 0, 1)) %>%
-  mutate(tet_hs_erg5 = ifelse(tet_hs <= 5.0, 0, 1))
+  mutate(tet_hs_erg4 = ifelse(tet_hs <= 1.0, 0, 1))
 
 #create binary variables for Serum results
 vTet <- hema %>% select(ID, tet_v) %>%
   mutate(tet_v_erg1 = ifelse(tet_v < 0.01, 0, 1)) %>%
   mutate(tet_v_erg2 = ifelse(tet_v <= 0.1, 0, 1)) %>%
   mutate(tet_v_erg3 = ifelse(tet_v <= 0.5, 0, 1)) %>%
-  mutate(tet_v_erg4 = ifelse(tet_v <= 1.0, 0, 1)) %>%
-  mutate(tet_v_erg5 = ifelse(tet_v <= 5.0, 0, 1))
+  mutate(tet_v_erg4 = ifelse(tet_v <= 1.0, 0, 1)) 
 
 #create binary variables for HemaForm results
 
@@ -132,9 +130,7 @@ pTet <- hema %>% select(ID, tet_p) %>%
   mutate(tet_p_erg1 = ifelse(tet_p < 0.01, 0, 1)) %>%
   mutate(tet_p_erg2 = ifelse(tet_p <= 0.1, 0, 1)) %>%
   mutate(tet_p_erg3 = ifelse(tet_p <= 0.5, 0, 1)) %>%
-  mutate(tet_p_erg4 = ifelse(tet_p <= 1.0, 0, 1)) %>%
-  mutate(tet_p_erg5 = ifelse(tet_p <= 5.0, 0, 1)) %>%
-  select(-tet_p)
+  mutate(tet_p_erg4 = ifelse(tet_p <= 1.0, 0, 1)) 
 
 #Merge two data sets
 
@@ -198,14 +194,6 @@ as.table(matrix(c(33, 0, 14, 2), nrow = 2, byrow = TRUE)) %>% epi.tests()
 #HF vs VBP
 table(all_Tet$tet_p_erg4,all_Tet$tet_v_erg4)
 as.table(matrix(c(40, 0, 7, 2), nrow = 2, byrow = TRUE)) %>% epi.tests()
-
-#Calculating sensitivity cut off <= 5.0 
-#HS vs VBP
-table(all_Tet$tet_hs_erg5,all_Tet$tet_v_erg5)
-as.table(matrix(c(0, 0, 0, 49), nrow = 2, byrow = TRUE)) %>% epi.tests()
-#HF vs VBP
-table(all_Tet$tet_p_erg5,all_Tet$tet_v_erg5)
-as.table(matrix(c(0, 0, 0, 49), nrow = 2, byrow = TRUE)) %>% epi.tests()
 
 ```
 ##05: Correlation of Anti-Clostridium tetani toxin IgG concentration in the different samples. Calculation of Pearson correlation.
@@ -273,7 +261,7 @@ ba1tet_plot <- BlandAltmanLeh::bland.altman.plot(ba1tet$tet_v, ba1tet$tet_hs, gr
   labs(title = "",
        x = "Average measure of Anti-Clostridium tetani toxin IgG concentration",
        y = "Difference in Anti-Clostridium tetani toxin IgG concentration between sampling methods: 
-       HemaSpot-HF - HemaForm") +
+       venous blood puncutre - HemaSpot-HF") +
   theme_classic()+
   scale_y_continuous(breaks = seq(-0.5, 2.5, 0.5), limits=c(-0.5, 2.5)) +
   scale_x_continuous(breaks = seq(0, 3.0, 0.5), limits=c(0, 3.0)) +
@@ -289,7 +277,7 @@ ba2tet_plot <- BlandAltmanLeh::bland.altman.plot(ba2tet$tet_v, ba2tet$tet_p, gra
   labs(title = "",
        x = "Average measure of Anti-Clostridium tetani toxin IgG concentration",
        y = "Difference in Anti-Clostridium tetani toxin IgG concentration between sampling methods: 
-       HemaSpot-HF - HemaForm") +
+       venous blood puncutre - HemaForm") +
   theme_classic()+
   scale_y_continuous(breaks = seq(-0.5, 2.5, 0.5), limits=c(-0.5, 2.5)) +
   scale_x_continuous(breaks = seq(0, 3.0, 0.5), limits=c(0, 3.0)) +
